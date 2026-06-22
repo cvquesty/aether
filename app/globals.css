@@ -1,0 +1,263 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Premium professional finance palette - light, crisp, executive */
+  --bg: #FAFBFC;
+  --bg-elevated: #FFFFFF;
+  --bg-subtle: #F1F5F9;
+
+  --text: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+
+  --border: #E2E8F0;
+  --border-subtle: #F1F5F9;
+
+  --primary: #0F172A;
+  --accent: #0EA5E9;
+  --accent-dark: #0284C8;
+
+  --success: #10B981;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+
+  --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --card-shadow-hover: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.06);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Professional typography and spacing */
+body {
+  font-family: var(--font-geist-sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Enhanced premium feel */
+h1, h2 {
+  letter-spacing: -0.025em;
+}
+
+/* Card system - clean executive style */
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+.card-subtle {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Metric cards */
+.metric {
+  padding: 20px;
+}
+
+.metric-value {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Professional buttons */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: #1E2937;
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+.btn-accent:hover {
+  background: var(--accent-dark);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-subtle);
+  border-color: var(--text-muted);
+}
+
+.btn-ghost {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+}
+
+/* Inputs */
+.input {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  padding-left: 1rem;
+  font-size: 15px;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Section headers */
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Tables - clean finance style */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-feature-settings: "tnum";
+}
+
+/* Chart container */
+.chart-container {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* News items */
+.news-item {
+  padding: 16px;
+  border-radius: 10px;
+  transition: background 0.1s ease;
+}
+
+.news-item:hover {
+  background: var(--bg-subtle);
+}
+
+/* Price change colors */
+.price-up {
+  color: var(--success);
+}
+
+.price-down {
+  color: var(--danger);
+}
+
+/* Modal */
+.modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+/* Subscription badge */
+.badge-pro {
+  background: linear-gradient(135deg, #0EA5E9, #0284C8);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+/* Scroll areas */
+.scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F8FAFC;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: #CBD5E1;
+  border-radius: 20px;
+}
+
+/* Report header - executive */
+.report-header {
+  background: linear-gradient(180deg, #0F172A 0%, #1E2937 100%);
+  color: white;
+}
+
+/* Responsive fine tuning */
+@media (max-width: 768px) {
+  .metric {
+    padding: 16px;
+  }
+}

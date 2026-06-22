@@ -1,0 +1,42 @@
+# Aether Apache VirtualHost (place in /etc/httpd/conf.d/30-aether-ssl.conf)
+# After placing, run: sudo systemctl reload httpd
+
+<VirtualHost *:443>
+  ServerName aether.questy.org
+
+  DocumentRoot "/var/www/html"
+
+  <Directory "/var/www/html">
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+  ErrorLog "/var/log/httpd/aether-ssl_error.log"
+  CustomLog "/var/log/httpd/aether-ssl_access.log" combined
+
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  RequestHeader set X-Forwarded-Proto "https"
+
+  ProxyRequests Off
+  ProxyPreserveHost On
+
+  # Next.js production server
+  ProxyPass / http://127.0.0.1:3100/
+  ProxyPassReverse / http://127.0.0.1:3100/
+
+  # Increase timeouts for report generation if needed
+  ProxyTimeout 120
+
+  # SSL (Let's Encrypt)
+  SSLEngine on
+  SSLCertificateFile      "/etc/letsencrypt/live/aether.questy.org/fullchain.pem"
+  SSLCertificateKeyFile   "/etc/letsencrypt/live/aether.questy.org/privkey.pem"
+  SSLProtocol             all -SSLv3 -TLSv1 -TLSv1.1
+</VirtualHost>
+
+# Optional: redirect HTTP to HTTPS
+<VirtualHost *:80>
+  ServerName aether.questy.org
+  Redirect permanent / https://aether.questy.org/
+</VirtualHost>

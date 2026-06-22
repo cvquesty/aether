@@ -1,0 +1,25 @@
+[Unit]
+Description=Aether - Executive Company Research Platform
+After=network.target
+
+[Service]
+Type=simple
+User=puppet
+Group=puppet
+WorkingDirectory=/opt/aether
+Environment=NODE_ENV=production
+Environment=PORT=3100
+# Optional: point to a .env file if you add secrets later
+# EnvironmentFile=/opt/aether/.env
+
+# The start script handles both standalone and regular next start
+ExecStart=/opt/aether/scripts/start.sh
+
+Restart=always
+RestartSec=5
+
+# Reasonable resource limits for a Next.js app
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
