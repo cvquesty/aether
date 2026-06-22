@@ -12,11 +12,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-// Simple auth + subscription simulation
+// User management system
 interface User {
+  id: string;
   email: string;
   name: string;
+  password: string; // mock, plaintext for demo only
   isPro: boolean;
+  role: 'admin' | 'pro' | 'free';
 }
 
 export default function AetherLanding() {
@@ -25,29 +28,59 @@ export default function AetherLanding() {
   const [currentTicker, setCurrentTicker] = useState('');
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [user, setUser] = useState<User | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [showAuth, setShowAuth] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
   const [showApp, setShowApp] = useState(false);
   const [currentNotes, setCurrentNotes] = useState('');
   const [savedReports, setSavedReports] = useState<any[]>([]);  // history with notes
+  const [showUserManagement, setShowUserManagement] = useState(false);
 
-  // Load persisted state
+  // Load persisted state + seed demo users
   useEffect(() => {
+    const savedUsers = localStorage.getItem('aether_users');
+    let users: User[] = [];
+    if (savedUsers) {
+      users = JSON.parse(savedUsers);
+    } else {
+      // Seed demo users on first run
+      users = [
+        {
+          id: 'u-admin',
+          email: 'admin@aether.demo',
+          name: 'Demo Admin',
+          password: 'admin123',
+          isPro: true,
+          role: 'admin',
+        },
+        {
+          id: 'u-pro',
+          email: 'analyst@aether.demo',
+          name: 'Pro Analyst',
+          password: 'pro123',
+          isPro: true,
+          role: 'pro',
+        },
+        {
+          id: 'u-free',
+          email: 'viewer@aether.demo',
+          name: 'Free Viewer',
+          password: 'free123',
+          isPro: false,
+          role: 'free',
+        },
+      ];
+      localStorage.setItem('aether_users', JSON.stringify(users));
+    }
+    setAllUsers(users);
+
     const savedUser = localStorage.getItem('aether_user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
-    } else {
-      // DEMO: Auto-login as admin for the public demo site
-      // This makes the full pro experience immediately available without manual login.
-      const demoUser: User = {
-        email: 'admin@aether.demo',
-        name: 'Demo Admin',
-        isPro: true,
-      };
-      localStorage.setItem('aether_user', JSON.stringify(demoUser));
-      setUser(demoUser);
     }
 
     const savedWatch = localStorage.getItem('aether_watchlist');
@@ -63,6 +96,11 @@ export default function AetherLanding() {
     if (u) localStorage.setItem('aether_user', JSON.stringify(u));
     else localStorage.removeItem('aether_user');
     setUser(u);
+  };
+
+  const persistUsers = (users: User[]) => {
+    localStorage.setItem('aether_users', JSON.stringify(users));
+    setAllUsers(users);
   };
 
   const persistWatchlist = (w: string[]) => {
@@ -152,28 +190,132 @@ export default function AetherLanding() {
     generateReport(ticker);
   };
 
-  // Mock auth
+  // User management system - proper login / signup
   const handleAuth = () => {
-    if (!authEmail) return;
-    const demoUser: User = {
-      email: authEmail,
-      name: authEmail.split('@')[0],
-      isPro: authMode === 'signup' || authEmail.includes('pro'),
-    };
+    if (!authEmail) {
+      toast.error('Email is required');
+      return;
+    }
+
+    if (authMode === 'signup') {
+      // Check if exists
+      if (allUsers.some(u => u.email.toLowerCase() === authEmail.toLowerCase())) {
+        toast.error('Account already exists. Please sign in.');
+        setAuthMode('login');
+        return;
+      }
+      const newUser: User = {
+        id: 'u-' + Date.now(),
+        email: authEmail,
+        name: authName || authEmail.split('@')[0],
+        password: authPassword || 'demo123',
+        isPro: false, // new users start free; can upgrade
+        role: 'free',
+      };
+      const updatedUsers = [...allUsers, newUser];
+      persistUsers(updatedUsers);
+      persistUser(newUser);
+      setShowAuth(false);
+      setAuthEmail('');
+      setAuthPassword('');
+      setAuthName('');
+      toast.success(`Account created! Welcome, ${newUser.name}.`);
+      setTimeout(() => setShowPricing(true), 600); // encourage upgrade
+    } else {
+      // Login
+      const found = allUsers.find(u => u.email.toLowerCase() === authEmail.toLowerCase());
+      if (!found) {
+        toast.error('No account found. Please sign up first.');
+        setAuthMode('signup');
+        return;
+      }
+      if (found.password !== authPassword && authPassword !== '') {
+        // allow empty password for demo convenience
+        toast.error('Incorrect password. (For demo, try the quick login buttons or password "demo123")');
+        return;
+      }
+      persistUser(found);
+      setShowAuth(false);
+      setAuthEmail('');
+      setAuthPassword('');
+      toast.success(`Welcome back, ${found.name.split('.')[0]}!`);
+    }
+  };
+
+  const loginAsDemo = (demoType: 'admin' | 'pro' | 'free') => {
+    const demoEmail = demoType === 'admin' ? 'admin@aether.demo' : demoType === 'pro' ? 'analyst@aether.demo' : 'viewer@aether.demo';
+    let demoUser = allUsers.find(u => u.email === demoEmail);
+    if (!demoUser) {
+      // create on the fly if missing
+      demoUser = {
+        id: 'u-' + demoType,
+        email: demoEmail,
+        name: demoType === 'admin' ? 'Demo Admin' : demoType === 'pro' ? 'Pro Analyst' : 'Free Viewer',
+        password: demoType + '123',
+        isPro: demoType !== 'free',
+        role: demoType,
+      };
+      const updated = [...allUsers, demoUser];
+      persistUsers(updated);
+    }
     persistUser(demoUser);
     setShowAuth(false);
     setAuthEmail('');
-    toast.success(`Welcome, ${demoUser.name.split('.')[0]}`);
-    
-    // If they just signed up, show pricing
-    if (authMode === 'signup') {
-      setTimeout(() => setShowPricing(true), 600);
-    }
+    setAuthPassword('');
+    toast.success(`Logged in as ${demoUser.name}`);
   };
 
   const logout = () => {
     persistUser(null);
+    setCurrentNotes('');
     toast('Signed out');
+  };
+
+  // Admin user management
+  const createNewUser = (email: string, name: string, role: User['role']) => {
+    if (!email || allUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+      toast.error('Invalid or duplicate email');
+      return;
+    }
+    const newUser: User = {
+      id: 'u-' + Date.now(),
+      email,
+      name: name || email.split('@')[0],
+      password: 'demo123',
+      isPro: role !== 'free',
+      role,
+    };
+    const updated = [...allUsers, newUser];
+    persistUsers(updated);
+    toast.success(`Created user ${email}`);
+  };
+
+  const toggleUserPro = (userId: string) => {
+    const updated = allUsers.map(u => {
+      if (u.id === userId) {
+        const newIsPro = !u.isPro;
+        const newRole: User['role'] = newIsPro ? (u.role === 'free' ? 'pro' : u.role) : 'free';
+        return { ...u, isPro: newIsPro, role: newRole };
+      }
+      return u;
+    });
+    persistUsers(updated);
+    // If editing current user, update current too
+    if (user && user.id === userId) {
+      const updatedCurrent = updated.find(u => u.id === userId)!;
+      persistUser(updatedCurrent);
+    }
+    toast.success('User updated');
+  };
+
+  const deleteUser = (userId: string) => {
+    if (user && user.id === userId) {
+      toast.error("Cannot delete yourself while logged in");
+      return;
+    }
+    const updated = allUsers.filter(u => u.id !== userId);
+    persistUsers(updated);
+    toast.success('User deleted');
   };
 
   const upgradeToPro = () => {
@@ -216,7 +358,13 @@ export default function AetherLanding() {
                 <div className="flex items-center gap-2 text-sm pr-3">
                   <span className="text-[#475569]">Hi, {user.name.split('.')[0]}</span>
                   {user.isPro && <span className="badge-pro">PRO</span>}
+                  {user.role === 'admin' && <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">ADMIN</span>}
                 </div>
+                {user.role === 'admin' && (
+                  <button onClick={() => setShowUserManagement(true)} className="btn-ghost text-sm px-3 py-2">
+                    Manage Users
+                  </button>
+                )}
                 <button onClick={logout} className="btn-ghost text-sm flex items-center gap-1.5 px-4 py-2">
                   <LogOut className="w-4 h-4" /> Sign out
                 </button>
@@ -531,7 +679,7 @@ export default function AetherLanding() {
         </div>
       </footer>
 
-      {/* Simple Auth Modal */}
+      {/* Auth Modal - improved user management */}
       <AnimatePresence>
         {showAuth && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onClick={() => setShowAuth(false)}>
@@ -540,17 +688,48 @@ export default function AetherLanding() {
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.96, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="modal w-full max-w-[380px] p-8"
+              className="modal w-full max-w-[420px] p-8"
             >
               <div className="text-2xl font-semibold tracking-tight mb-1">Welcome to Aether</div>
-              <p className="text-[#475569] text-sm mb-7">Sign in to save reports and unlock Pro features.</p>
+              <p className="text-[#475569] text-sm mb-4">Sign in to save reports, manage watchlists, and unlock Pro features.</p>
 
+              {/* Quick Demo Logins - makes it obvious how to log back in */}
+              <div className="mb-4">
+                <div className="text-xs uppercase tracking-widest text-[#64748B] mb-2">Quick Demo Logins</div>
+                <div className="grid grid-cols-3 gap-2">
+                  <button onClick={() => loginAsDemo('admin')} className="btn-secondary text-xs py-2">Admin (Pro)</button>
+                  <button onClick={() => loginAsDemo('pro')} className="btn-secondary text-xs py-2">Pro Analyst</button>
+                  <button onClick={() => loginAsDemo('free')} className="btn-secondary text-xs py-2">Free User</button>
+                </div>
+                <div className="text-[10px] text-center text-[#94A3B8] mt-1">Passwords: admin123 / pro123 / free123 (or leave blank)</div>
+              </div>
+
+              <div className="border-t my-4"></div>
+
+              {/* Manual form */}
+              {authMode === 'signup' && (
+                <input 
+                  type="text" 
+                  placeholder="Full name" 
+                  className="input mb-3" 
+                  value={authName} 
+                  onChange={(e) => setAuthName(e.target.value)} 
+                />
+              )}
               <input 
                 type="email" 
                 placeholder="you@company.com" 
-                className="input mb-4" 
+                className="input mb-3" 
                 value={authEmail} 
                 onChange={(e) => setAuthEmail(e.target.value)} 
+                onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+              />
+              <input 
+                type="password" 
+                placeholder="Password (demo123 for seeded accounts)" 
+                className="input mb-4" 
+                value={authPassword} 
+                onChange={(e) => setAuthPassword(e.target.value)} 
                 onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
               />
 
@@ -566,7 +745,102 @@ export default function AetherLanding() {
                 )}
               </div>
 
-              <div className="text-[11px] text-center text-[#94A3B8] mt-6">Demo mode — any email works.</div>
+              <div className="text-[11px] text-center text-[#94A3B8] mt-4">Demo mode — use the quick buttons above or any credentials.</div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* User Management Modal (admin only) */}
+      <AnimatePresence>
+        {showUserManagement && user?.role === 'admin' && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6" onClick={() => setShowUserManagement(false)}>
+            <motion.div 
+              initial={{ scale: 0.96, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.96, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="modal w-full max-w-[720px] p-8"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-2xl font-semibold tracking-tight">User Management</div>
+                  <div className="text-sm text-[#64748B]">Create, edit, and manage demo accounts</div>
+                </div>
+                <button onClick={() => setShowUserManagement(false)} className="text-[#64748B] hover:text-black">Close</button>
+              </div>
+
+              {/* Create new user form */}
+              <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 mb-6">
+                <div className="text-xs uppercase tracking-widest text-[#64748B] mb-2">Create New User</div>
+                <div className="flex flex-wrap gap-2">
+                  <input id="new-email" type="email" placeholder="newuser@company.com" className="input flex-1 min-w-[180px]" />
+                  <input id="new-name" type="text" placeholder="Name" className="input flex-1 min-w-[140px]" />
+                  <select id="new-role" className="input w-auto">
+                    <option value="free">Free</option>
+                    <option value="pro">Pro</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <button 
+                    onClick={() => {
+                      const emailEl = document.getElementById('new-email') as HTMLInputElement;
+                      const nameEl = document.getElementById('new-name') as HTMLInputElement;
+                      const roleEl = document.getElementById('new-role') as HTMLSelectElement;
+                      if (emailEl?.value) {
+                        createNewUser(emailEl.value, nameEl?.value || '', roleEl.value as any);
+                        emailEl.value = ''; nameEl.value = '';
+                      }
+                    }}
+                    className="btn-primary px-4 text-sm"
+                  >
+                    Create
+                  </button>
+                </div>
+              </div>
+
+              {/* Users table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b">
+                      <th className="py-2">Email / Name</th>
+                      <th>Role</th>
+                      <th>Pro</th>
+                      <th className="text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allUsers.map((u) => (
+                      <tr key={u.id} className="border-b last:border-0">
+                        <td className="py-2.5">
+                          <div className="font-medium">{u.email}</div>
+                          <div className="text-xs text-[#64748B]">{u.name}</div>
+                        </td>
+                        <td className="uppercase text-xs tracking-widest text-[#64748B]">{u.role}</td>
+                        <td>
+                          <button 
+                            onClick={() => toggleUserPro(u.id)}
+                            className={`text-xs px-2 py-0.5 rounded ${u.isPro ? 'bg-emerald-100 text-emerald-700' : 'bg-[#F1F5F9] text-[#475569]'}`}
+                          >
+                            {u.isPro ? 'Pro' : 'Free'}
+                          </button>
+                        </td>
+                        <td className="text-right">
+                          <button 
+                            onClick={() => deleteUser(u.id)} 
+                            disabled={user?.id === u.id}
+                            className="text-xs text-red-600 hover:underline disabled:opacity-40"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="text-[11px] text-[#94A3B8] mt-4">Demo users only. Passwords are stored in localStorage for this demo.</div>
             </motion.div>
           </div>
         )}
