@@ -17,8 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STAGED_DIR="${1:-${SCRIPT_DIR%/scripts}}"
 INSTALL_DIR="/opt/aether"
 SERVICE_NAME="aether"
-USER_NAME="aether"
-GROUP_NAME="aether"
+USER_NAME="puppet"
+GROUP_NAME="puppet"
 
 if [ "$(id -u)" -ne 0 ]; then
     echo "Error: deploy.sh must be run as root (use sudo)."
