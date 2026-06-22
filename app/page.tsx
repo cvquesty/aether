@@ -272,7 +272,7 @@ export default function AetherLanding() {
   };
 
   // Admin user management
-  const createNewUser = (email: string, name: string, role: User['role']) => {
+  const createNewUser = (email: string, name: string, role: User['role'], password?: string) => {
     if (!email || allUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
       toast.error('Invalid or duplicate email');
       return;
@@ -281,13 +281,13 @@ export default function AetherLanding() {
       id: 'u-' + Date.now(),
       email,
       name: name || email.split('@')[0],
-      password: 'demo123',
+      password: password || 'demo123',
       isPro: role !== 'free',
       role,
     };
     const updated = [...allUsers, newUser];
     persistUsers(updated);
-    toast.success(`Created user ${email}`);
+    toast.success(`Created user ${email} (pw: ${newUser.password})`);
   };
 
   const toggleUserPro = (userId: string) => {
@@ -776,6 +776,7 @@ export default function AetherLanding() {
                 <div className="flex flex-wrap gap-2">
                   <input id="new-email" type="email" placeholder="newuser@company.com" className="input flex-1 min-w-[180px]" />
                   <input id="new-name" type="text" placeholder="Name" className="input flex-1 min-w-[140px]" />
+                  <input id="new-password" type="text" placeholder="Password (optional)" className="input w-40" />
                   <select id="new-role" className="input w-auto">
                     <option value="free">Free</option>
                     <option value="pro">Pro</option>
@@ -785,10 +786,11 @@ export default function AetherLanding() {
                     onClick={() => {
                       const emailEl = document.getElementById('new-email') as HTMLInputElement;
                       const nameEl = document.getElementById('new-name') as HTMLInputElement;
+                      const pwEl = document.getElementById('new-password') as HTMLInputElement;
                       const roleEl = document.getElementById('new-role') as HTMLSelectElement;
                       if (emailEl?.value) {
-                        createNewUser(emailEl.value, nameEl?.value || '', roleEl.value as any);
-                        emailEl.value = ''; nameEl.value = '';
+                        createNewUser(emailEl.value, nameEl?.value || '', roleEl.value as any, pwEl?.value || undefined);
+                        emailEl.value = ''; nameEl.value = ''; if (pwEl) pwEl.value = '';
                       }
                     }}
                     className="btn-primary px-4 text-sm"
@@ -804,6 +806,7 @@ export default function AetherLanding() {
                   <thead>
                     <tr className="text-left border-b">
                       <th className="py-2">Email / Name</th>
+                      <th>Password</th>
                       <th>Role</th>
                       <th>Pro</th>
                       <th className="text-right">Actions</th>
@@ -816,6 +819,7 @@ export default function AetherLanding() {
                           <div className="font-medium">{u.email}</div>
                           <div className="text-xs text-[#64748B]">{u.name}</div>
                         </td>
+                        <td className="font-mono text-xs text-[#475569]">{u.password}</td>
                         <td className="uppercase text-xs tracking-widest text-[#64748B]">{u.role}</td>
                         <td>
                           <button 
@@ -840,7 +844,7 @@ export default function AetherLanding() {
                 </table>
               </div>
 
-              <div className="text-[11px] text-[#94A3B8] mt-4">Demo users only. Passwords are stored in localStorage for this demo.</div>
+              <div className="text-[11px] text-[#94A3B8] mt-4">Demo only. Passwords stored in localStorage (plain text). Shown here for admin visibility.</div>
             </motion.div>
           </div>
         )}
